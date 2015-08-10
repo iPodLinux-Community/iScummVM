@@ -113,6 +113,9 @@ OSystem_X11::~OSystem_X11() {
 	free(_local_fb_overlay);
 	free(_local_fb);
 }
+audio_buf_info* info;
+static int sound_fd;
+#define FRAG_SIZE 4096
 
 void OSystem_X11::initBackend() {
 	char buf[512];
@@ -195,6 +198,57 @@ void OSystem_X11::initBackend() {
 out_of_loop:
 	create_empty_cursor();
 
+
+/*
+	int param, frag_size;
+
+#ifdef CAPTURE_SOUND
+	//FILE *f = fopen("sound.raw", "wb");
+#endif
+
+	sound_fd = open("/dev/dsp", O_WRONLY);
+	
+
+	if (sound_fd < 0) {
+		warning("Error opening sound device!\n");
+	}
+	
+	param = 0;
+	frag_size = FRAG_SIZE  ;
+	while (frag_size) {
+		frag_size >>= 1;
+		param++;
+	}
+	param--;
+	param |= 3 << 16;
+	if (ioctl(sound_fd, SNDCTL_DSP_SETFRAGMENT, &param) != 0) {
+		warning("Error in the SNDCTL_DSP_SETFRAGMENT ioctl!\n");
+	}
+	param = AFMT_S16_LE;
+	if (ioctl(sound_fd, SNDCTL_DSP_SETFMT, &param) == -1) {
+		warning("Error in the SNDCTL_DSP_SETFMT ioctl!\n");
+	}
+	if (param != AFMT_S16_LE) {
+		warning("AFMT_S16_LE not supported!\n");
+	}
+	param = 2;
+	if (ioctl(sound_fd, SNDCTL_DSP_CHANNELS, &param) == -1) {
+		warning("Error in the SNDCTL_DSP_CHANNELS ioctl!\n");
+	}
+	if (param != 2) {
+		warning("Stereo mode not supported!\n");
+	}
+	param = SAMPLES_PER_SEC;
+	if (ioctl(sound_fd, SNDCTL_DSP_SPEED, &param) == -1) {
+		warning("Error in the SNDCTL_DSP_SPEED ioctl!\n");
+	}
+	if (param != SAMPLES_PER_SEC) {
+		warning("%d kHz not supported!\n", SAMPLES_PER_SEC);
+	}
+	if (ioctl(sound_fd, SNDCTL_DSP_GETOSPACE, &info) != 0) {
+		warning("SNDCTL_DSP_GETOSPACE");
+	}
+*/	
 	/* Initialize the timer routines */
 	_timer_active = false;
 
@@ -202,9 +256,65 @@ out_of_loop:
 	gettimeofday(&_start_time, NULL);
 
 }
+/*
+int sound_fd;
+#define FRAG_SIZE 4096
 
+static void init_sound() {
+	int param, frag_size;
+
+#ifdef CAPTURE_SOUND
+	//FILE *f = fopen("sound.raw", "wb");
+#endif
+
+	sound_fd = open("/dev/dsp", O_WRONLY);
+	audio_buf_info info;
+
+	if (sound_fd < 0) {
+		warning("Error opening sound device!\n");
+	}
+	
+	param = 0;
+	frag_size = FRAG_SIZE ;
+	while (frag_size) {
+		frag_size >>= 1;
+		param++;
+	}
+	param--;
+	param |= 3 << 16;
+	if (ioctl(sound_fd, SNDCTL_DSP_SETFRAGMENT, &param) != 0) {
+		warning("Error in the SNDCTL_DSP_SETFRAGMENT ioctl!\n");
+	}
+	param = AFMT_S16_LE;
+	if (ioctl(sound_fd, SNDCTL_DSP_SETFMT, &param) == -1) {
+		warning("Error in the SNDCTL_DSP_SETFMT ioctl!\n");
+	}
+	if (param != AFMT_S16_LE) {
+		warning("AFMT_S16_LE not supported!\n");
+	}
+	param = 2;
+	if (ioctl(sound_fd, SNDCTL_DSP_CHANNELS, &param) == -1) {
+		warning("Error in the SNDCTL_DSP_CHANNELS ioctl!\n");
+	}
+	if (param != 2) {
+		warning("Stereo mode not supported!\n");
+	}
+	param = SAMPLES_PER_SEC;
+	if (ioctl(sound_fd, SNDCTL_DSP_SPEED, &param) == -1) {
+		warning("Error in the SNDCTL_DSP_SPEED ioctl!\n");
+	}
+	if (param != SAMPLES_PER_SEC) {
+		warning("%d kHz not supported!\n", SAMPLES_PER_SEC);
+	}
+	if (ioctl(sound_fd, SNDCTL_DSP_GETOSPACE, &info) != 0) {
+		warning("SNDCTL_DSP_GETOSPACE");
+	}
+}
+*/
 #undef CAPTURE_SOUND
 #define FRAG_SIZE 4096
+
+
 
 static void *sound_and_music_thread(void *params) {
 	/* Init sound */
@@ -214,23 +324,25 @@ static void *sound_and_music_thread(void *params) {
 	void *proc_param = ((THREAD_PARAM *)params)->param;
 
 #ifdef CAPTURE_SOUND
-	FILE *f = fopen("sound.raw", "wb");
+	//FILE *f = fopen("sound.raw", "wb");
 #endif
 
 	sound_fd = open("/dev/dsp", O_WRONLY);
 	audio_buf_info info;
+
 	if (sound_fd < 0) {
 		warning("Error opening sound device!\n");
 		return NULL;
 	}
+	
 	param = 0;
-	frag_size = FRAG_SIZE /* audio fragment size */ ;
+	frag_size = FRAG_SIZE ;
 	while (frag_size) {
 		frag_size >>= 1;
 		param++;
 	}
 	param--;
-	param |= /* audio_fragment_num */ 3 << 16;
+	param |= 3 << 16;
 	if (ioctl(sound_fd, SNDCTL_DSP_SETFRAGMENT, &param) != 0) {
 		warning("Error in the SNDCTL_DSP_SETFRAGMENT ioctl!\n");
 		return NULL;
@@ -274,8 +386,8 @@ static void *sound_and_music_thread(void *params) {
 
 		sound_proc(proc_param, (byte *)sound_buffer, FRAG_SIZE);
 #ifdef CAPTURE_SOUND
-		fwrite(buf, 2, FRAG_SIZE >> 1, f);
-		fflush(f);
+		//fwrite(buf, 2, FRAG_SIZE >> 1, f);
+		//fflush(f);
 #endif
 		size = FRAG_SIZE;
 		while (size > 0) {

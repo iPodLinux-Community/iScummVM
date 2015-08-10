@@ -67,7 +67,7 @@
 extern bool isSmartphone(void);
 #endif
 
-#if (defined(PALMOS_ARM) || defined(PALMOS_DEBUG) || defined(__GP32__))
+#if (defined(PALMOS_ARM) || defined(PALMOS_DEBUG) || defined(__GP32__) || defined(IPOD))
 namespace Graphics {
 	extern void initfonts();
 }
@@ -1082,7 +1082,7 @@ void ScummEngine::setupScumm() {
 #endif
 	res._minHeapThreshold = 400000;
 
-#if (defined(PALMOS_ARM) || defined(PALMOS_DEBUG) || defined(__GP32__))
+#if (defined(PALMOS_ARM) || defined(PALMOS_DEBUG) || defined(__GP32__) || defined(IPOD))
 	Graphics::initfonts();
 #endif
 }

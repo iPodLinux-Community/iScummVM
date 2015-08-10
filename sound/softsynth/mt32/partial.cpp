@@ -112,8 +112,10 @@ void Partial::initKeyFollow(int key) {
 	noteVal = newPitch;
 	synth->printDebug("key=%d, pitch=%f, pitchKeyfollow=%f, pitchShift=%f, newPitch=%f", key, patchCache->pitch, patchCache->pitchKeyfollow, patchCache->pitchShift, newPitch);
 #else
-	float newPitchInt;
-	float newPitchFract = modff(newPitch, &newPitchInt);
+	double newPitchInt;
+	float newPitchFract = modf(newPitch, &newPitchInt);
+	//float newPitchFract = modff(newPitch, &newPitchInt);
+
 	if (newPitchFract > 0.5f) {
 		newPitchInt += 1.0f;
 		newPitchFract -= 1.0f;

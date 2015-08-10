@@ -137,7 +137,7 @@ static const char HELP_STRING[] =
 ;
 #endif
 
-#if !(defined(PALMOS_ARM) || defined(PALMOS_DEBUG) || defined(__GP32__) || defined (__SYMBIAN32__))
+#if !(defined(PALMOS_ARM) || defined(PALMOS_DEBUG) || defined(__GP32__) || defined (__SYMBIAN32__) || defined (IPOD))
 static Common::String s_appName("scummvm");
 #else
 static const char *s_appName = "scummvm";
@@ -153,7 +153,7 @@ static void usage(const char *s, ...) {
 	vsnprintf(buf, STRINGBUFLEN, s, va);
 	va_end(va);
 
-#if !(defined(PALMOS_ARM) || defined(PALMOS_DEBUG) || defined(__GP32__) || defined (__SYMBIAN32__))
+#if !(defined(PALMOS_ARM) || defined(PALMOS_DEBUG) || defined(__GP32__) || defined (__SYMBIAN32__) || defined (IPOD))
 	printf(USAGE_STRING, s_appName.c_str(), buf, s_appName.c_str(), s_appName.c_str());
 #endif
 	exit(1);
@@ -386,6 +386,9 @@ Common::String parseCommandLine(Common::StringMap &settings, int argc, char **ar
 			END_OPTION
 
 			DO_OPTION_BOOL('f', "fullscreen")
+			END_OPTION
+				
+			DO_LONG_OPTION("opl-driver")
 			END_OPTION
 
 			DO_OPTION('g', "gfx-mode")
@@ -646,7 +649,7 @@ bool processSettings(Common::String &command, Common::StringMap &settings) {
 		printf("Features compiled in: %s\n", gScummVMFeatures);
 		return false;
 	} else if (command == "help") {
-#if !(defined(PALMOS_ARM) || defined(PALMOS_DEBUG) || defined(__GP32__) || defined(__SYMBIAN32__))
+#if !(defined(PALMOS_ARM) || defined(PALMOS_DEBUG) || defined(__GP32__) || defined(__SYMBIAN32__) || defined(IPOD))
 		printf(HELP_STRING, s_appName.c_str());
 #else
 		printf(HELP_STRING, s_appName);

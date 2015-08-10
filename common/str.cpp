@@ -28,7 +28,7 @@
 
 namespace Common {
 
-#if !(defined(PALMOS_ARM) || defined(PALMOS_DEBUG) || defined(__GP32__))
+#if !(defined(PALMOS_ARM) || defined(PALMOS_DEBUG) || defined(__GP32__)  || defined(IPOD))
 const String String::emptyString;
 #else
 const char *String::emptyString = "";
@@ -347,6 +347,47 @@ bool operator == (const char* y, const String &x) {
 
 bool operator != (const char* y, const String &x) {
 	return x != y;
+}
+
+
+
+
+#pragma mark -
+
+bool String::equals(const String &x) const {
+	return (0 == compareTo(x));
+}
+
+bool String::equals(const char *x) const {
+	assert(x != 0);
+	return (0 == compareTo(x));
+}
+
+bool String::equalsIgnoreCase(const String &x) const {
+	return (0 == compareToIgnoreCase(x));
+}
+
+bool String::equalsIgnoreCase(const char *x) const {
+	assert(x != 0);
+	return (0 == compareToIgnoreCase(x));
+}
+
+int String::compareTo(const String &x) const {
+	return compareTo(x.c_str());
+}
+
+int String::compareTo(const char *x) const {
+	assert(x != 0);
+	return strcmp(c_str(), x);
+}
+
+int String::compareToIgnoreCase(const String &x) const {
+	return compareToIgnoreCase(x.c_str());
+}
+
+int String::compareToIgnoreCase(const char *x) const {
+	assert(x != 0);
+	return scumm_stricmp(c_str(), x);
 }
 
 }	// End of namespace Common

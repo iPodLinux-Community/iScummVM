@@ -26,7 +26,7 @@ DECLARE_SINGLETON(Graphics::FontManager);
 
 namespace Graphics {
 
-#if !(defined(PALMOS_ARM) || defined(PALMOS_DEBUG) || defined(__GP32__))
+#if !(defined(PALMOS_ARM) || defined(PALMOS_DEBUG) || defined(__GP32__) || defined(IPOD))
 const ScummFont g_scummfont;
 extern const NewFont g_sysfont;
 extern const NewFont g_sysfont_big;
@@ -66,7 +66,7 @@ const Font *FontManager::getFontByName(const Common::String &name) const {
 
 const Font *FontManager::getFontByUsage(FontUsage usage) const {
 	switch (usage) {
-#if !(defined(PALMOS_ARM) || defined(PALMOS_DEBUG) || defined(__GP32__))
+#if !(defined(PALMOS_ARM) || defined(PALMOS_DEBUG) || defined(__GP32__) || defined(IPOD))
 	case kOSDFont:
 		return &g_scummfont;
 	case kConsoleFont:

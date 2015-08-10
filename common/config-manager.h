@@ -76,7 +76,7 @@ public:
 
 	typedef HashMap<String, Domain, IgnoreCase_Hash, IgnoreCase_EqualTo> DomainMap;
 
-#if !(defined(PALMOS_ARM) || defined(PALMOS_DEBUG) || defined(__GP32__))
+#if !(defined(PALMOS_ARM) || defined(PALMOS_DEBUG) || defined(__GP32__) || defined(IPOD))
 	/** The name of the application domain (normally 'scummvm'). */
 	static const String kApplicationDomain;
 

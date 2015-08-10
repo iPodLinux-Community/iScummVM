@@ -75,6 +75,14 @@ public:
 	 * @param max	the upper bound
 	 * @return	a random number in the interval [0, max].
 	 */
+
+	/**
+	 * Generates a random bit, i.e. either 0 or 1.
+	 * Identical to getRandomNumber(1), but faster, hopefully.
+	 * @return	a random bit, either 0 or 1
+	 */
+	uint getRandomBit();
+
 	uint getRandomNumber(uint max);
 	/**
 	 * Generates a random unsigned integer in the interval [min, max].

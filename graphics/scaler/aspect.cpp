@@ -29,7 +29,7 @@
 #define	kFastAndNiceAspectMode		1	// Quite good quality with good speed
 #define	kSlowAndPerfectAspectMode	2	// Accurate but slow code
 
-#define ASPECT_MODE	kFastAndNiceAspectMode
+#define ASPECT_MODE	kVeryFastAndUglyAspectMode
 
 
 #if ASPECT_MODE == kSlowAndPerfectAspectMode

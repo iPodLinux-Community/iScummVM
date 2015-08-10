@@ -400,7 +400,8 @@ void Tables::initMT32ConstantTables(Synth *synth) {
 
 	for (lf = 0; lf <= 14; lf++) {
 		for (int distval = 0; distval < 128; distval++) {
-			float filval = fabsf((float)((lf - 7) * 12) / 7.0f);
+			float filval = fabs((float)((lf - 7) * 12) / 7.0f);
+			//float filval = fabsf((float)((lf - 7) * 12) / 7.0f);
 			float amplog, dval;
 			if (lf == 7) {
 				amplog = 0;

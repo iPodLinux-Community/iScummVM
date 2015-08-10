@@ -55,9 +55,8 @@
 #	endif
 
 #else
-//#define SAMPLES_PER_SEC 11025
-#define SAMPLES_PER_SEC 22050
-//#define SAMPLES_PER_SEC 44100
+#define SAMPLES_PER_SEC 16000 // best audio so far
+//#define SAMPLES_PER_SEC 36000
 #endif
 
 #endif

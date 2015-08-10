@@ -221,7 +221,7 @@
 	#define START_PACK_STRUCTS pack(push, 1)
 	#define END_PACK_STRUCTS   pack(pop)
 
-#elif defined(__GP32__)
+#elif  defined(__GP32__) 
 
 	#define scumm_stricmp stricmp
 	#define scumm_strnicmp strnicmp
@@ -242,6 +242,31 @@
 	typedef unsigned long int uint32;
 	typedef signed long int int32;
 
+	#define START_PACK_STRUCTS pack(push, 1)
+	#define END_PACK_STRUCTS   pack(pop)
+
+#elif  defined(IPOD) 
+
+	#define scumm_stricmp stricmp
+	#define scumm_strnicmp strnicmp
+
+	#define SCUMM_LITTLE_ENDIAN 
+	#define SCUMM_NEED_ALIGNMENT
+
+/*
+	// Override typenames. uint is already defined by system header files.
+	#define SCUMMVM_DONT_DEFINE_TYPES
+	typedef unsigned char byte;
+
+	typedef unsigned char uint8;
+	typedef signed char int8;
+
+	typedef unsigned short int uint16;
+	typedef signed short int int16;
+
+	typedef unsigned long int uint32;
+	typedef signed long int int32;
+*/
 	#define START_PACK_STRUCTS pack(push, 1)
 	#define END_PACK_STRUCTS   pack(pop)
 

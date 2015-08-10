@@ -40,7 +40,7 @@ namespace Audio {
  * The precision of the fractional computations used by the rate converter.
  * Normally you should never have to modify this value.
  */
-#define FRAC_BITS 16
+#define FRAC_BITS 8
 
 /**
  * The size of the intermediate input cache. Bigger values may increase
@@ -48,7 +48,7 @@ namespace Audio {
  * target processor and various other factors), at which it will decrease
  * again.
  */
-#define INTERMEDIATE_BUFFER_SIZE 512
+#define INTERMEDIATE_BUFFER_SIZE 1024
 
 
 /**

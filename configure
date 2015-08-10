@@ -286,7 +286,7 @@ Usage: $0 [OPTIONS]...
 
 Configuration:
   -h, --help             display this help and exit
-  --backend=BACKEND      backend to build (sdl, x11, morphos, dc, gp32, null) [sdl]
+  --backend=BACKEND      backend to build (sdl, x11, morphos, dc, gp32, ipod, ipod_x11, null) [sdl]
 
 Installation directories:
   --prefix=DIR           use this prefix for installing ScummVM [/usr/local]
@@ -505,6 +505,14 @@ arm-riscos)
 ppc-amigaos)
 	_host_os=amigaos
 	_host_cpu=ppc
+	;;
+ipod)
+	_host_os=uclinux-elf
+	_host_cpu=arm
+	;;
+ipod_x11)
+	_host_os=uclinux-elf
+	_host_cpu=arm
 	;;
 *)
 	guessed_host=`$_srcdir/config.guess`
@@ -772,6 +780,32 @@ if test -n "$_host"; then
 			CXXFLAGS="$CFLAGS -mcrt=newlib -mstrict-align -mcpu=750 -mtune=7400"
 			LDFLAGS="$LDFLAGS -mcrt=newlib"
 			;;
+		ipod)
+                        echo "Cross-compiling to $_host, forcing endianness, alignment and type sizes"
+                        DEFINES="$DEFINES -DUNIX -D_BSD_SOURCE -DIPOD -DDISABLE_HELP"
+                        LDFLAGS="$LDFLAGS -Wl,-elf2flt"
+                        _def_endianness='#define SCUMM_LITTLE_ENDIAN'
+			_def_align='#define SCUMM_NEED_ALIGNMENT'
+                        _need_memalign=yes
+                        type_1_byte='char'
+                        type_2_byte='short'
+                        type_4_byte='int'
+                        _backend="ipod"
+                        _build_hq_scalers="no"
+                        ;;
+		ipod_x11)
+                        echo "Cross-compiling to $_host, forcing endianness, alignment and type sizes"
+                        DEFINES="$DEFINES -DUNIX -D_BSD_SOURCE -DIPOD -DDISABLE_HELP"
+                        LDFLAGS="$LDFLAGS -Wl,-elf2flt"
+                        _def_endianness='#define SCUMM_LITTLE_ENDIAN'
+			_def_align='#define SCUMM_NEED_ALIGNMENT'
+                        _need_memalign=yes
+                        type_1_byte='char'
+                        type_2_byte='short'
+                        type_4_byte='int'
+                        _backend="ipod_x11"
+                        _build_hq_scalers="no"
+                        ;;
 		*)
 			echo "Cross-compiling to unknown target $_host, please add your target to configure."
 			exit 1
@@ -1342,6 +1376,16 @@ case $_backend in
 		DEFINES="$DEFINES -DX11_BACKEND"
 		MODULES="$MODULES backends/x11"
 		;;
+	 ipod)
+                INCLUDES="$INCLUDES -I../libs/ttk/sdlincludes"
+                LIBS="$LIBS common/libcommon.a ../libs/ttk/libs/SDL/libSDL.a -lstdc++ -lpthread"
+                MODULES="$MODULES backends/ipod"
+                ;;
+	 ipod_x11)
+                INCLUDES="$INCLUDES -I/usr/X11R6/include -I../libs/ttk/src/include"
+                LIBS="$LIBS common/libcommon.a -lstdc++ -lpthread"
+                MODULES="$MODULES backends/ipod_x11"
+                ;;
 	*)
 		echo "support for $_backend backend not implemented in configure script yet"
 		exit 1

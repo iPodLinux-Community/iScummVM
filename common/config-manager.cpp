@@ -67,7 +67,7 @@ static bool isValidDomainName(const Common::String &domName) {
 
 namespace Common {
 
-#if !(defined(PALMOS_ARM) || defined(PALMOS_DEBUG) || defined(__GP32__))
+#if !(defined(PALMOS_ARM) || defined(PALMOS_DEBUG) || defined(__GP32__) || defined(IPOD))
 
 const String ConfigManager::kApplicationDomain("scummvm");
 const String ConfigManager::kTransientDomain("__TRANSIENT");
@@ -90,11 +90,15 @@ ConfigManager::ConfigManager()
 void ConfigManager::loadDefaultConfigFile() {
 	char configFile[MAXPATHLEN];
 #if defined(UNIX)
-	const char *home = getenv("HOME");
-	if (home != NULL && strlen(home) < MAXPATHLEN)
-		snprintf(configFile, MAXPATHLEN, "%s/%s", home, DEFAULT_CONFIG_FILE);
-	else
+	#if defined (IPOD)
 		strcpy(configFile, DEFAULT_CONFIG_FILE);
+	#else
+		const char *home = getenv("HOME");
+		if (home != NULL && strlen(home) < MAXPATHLEN)
+			snprintf(configFile, MAXPATHLEN, "%s/%s", home, DEFAULT_CONFIG_FILE);
+		else
+			strcpy(configFile, DEFAULT_CONFIG_FILE);
+	#endif
 #else
 	#if defined (WIN32) && !defined(_WIN32_WCE) && !defined(__SYMBIAN32__)
 		GetWindowsDirectory(configFile, MAXPATHLEN);
@@ -380,7 +384,7 @@ const String & ConfigManager::get(const String &key) const {
 	else if (_defaultsDomain.contains(key))
 		return _defaultsDomain[key];
 
-#if !(defined(PALMOS_ARM) || defined(PALMOS_DEBUG) || defined(__GP32__))
+#if !(defined(PALMOS_ARM) || defined(PALMOS_DEBUG) || defined(__GP32__) || defined(IPOD))
 	return String::emptyString;
 #else
 	return ConfMan._emptyString;
@@ -407,7 +411,7 @@ const String & ConfigManager::get(const String &key, const String &domName) cons
 
 	if (!domain->contains(key)) {
 #if 1
-#if !(defined(PALMOS_ARM) || defined(PALMOS_DEBUG) || defined(__GP32__))
+#if !(defined(PALMOS_ARM) || defined(PALMOS_DEBUG) || defined(__GP32__) || defined(IPOD))
 	return String::emptyString;
 #else
 	return ConfMan._emptyString;
@@ -610,7 +614,7 @@ const String &ConfigManager::Domain::get(const String &key) const {
 	if (iter != end())
 		return iter->_value;
 
-#if !(defined(PALMOS_ARM) || defined(PALMOS_DEBUG) || defined(__GP32__))
+#if !(defined(PALMOS_ARM) || defined(PALMOS_DEBUG) || defined(__GP32__) || defined(IPOD))
 	return String::emptyString;
 #else
 	return ConfMan._emptyString;

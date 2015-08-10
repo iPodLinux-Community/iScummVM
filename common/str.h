@@ -38,7 +38,7 @@ protected:
 	int 		_capacity;
 
 public:
-#if !(defined(PALMOS_ARM) || defined(PALMOS_DEBUG) || defined(__GP32__))
+#if !(defined(PALMOS_ARM) || defined(PALMOS_DEBUG) || defined(__GP32__) || defined(IPOD))
 	static const String emptyString;
 #else
 	static const char *emptyString;
@@ -65,8 +65,53 @@ public:
 	bool operator >(const String &x) const;
 	bool operator >=(const String &x) const;
 
+	bool equals(const String &x) const;
+	bool equalsIgnoreCase(const String &x) const;
+	int compareTo(const String &x) const;	// strcmp clone
+	int compareToIgnoreCase(const String &x) const;	// stricmp clone
+
+	bool equals(const char *x) const;
+	bool equalsIgnoreCase(const char *x) const;
+	int compareTo(const char *x) const;	// strcmp clone
+	int compareToIgnoreCase(const char *x) const;	// stricmp clone
+
+	bool hasSuffix(const String &x) const;
 	bool hasSuffix(const char *x) const;
+
+	bool hasPrefix(const String &x) const;
 	bool hasPrefix(const char *x) const;
+
+	bool contains(const String &x) const;
+	bool contains(const char *x) const;
+	bool contains(char x) const;
+
+	/**
+	 * Simple DOS-style pattern matching function (understands * and ? like used in DOS).
+	 * Taken from exult/files/listfiles.cc
+	 *
+	 * Token meaning:
+	 *		"*": any character, any amount of times.
+	 *		"?": any character, only once.
+	 *
+	 * Example strings/patterns:
+	 *		String: monkey.s01	 Pattern: monkey.s??	=> true
+	 *		String: monkey.s101	 Pattern: monkey.s??	=> false
+	 *		String: monkey.s99	 Pattern: monkey.s?1	=> false
+	 *		String: monkey.s101	 Pattern: monkey.s*		=> true
+	 *		String: monkey.s99	 Pattern: monkey.s*1	=> false
+	 *
+	 * @param str Text to be matched against the given pattern.
+	 * @param pat Glob pattern.
+	 * @param ignoreCase Whether to ignore the case when doing pattern match
+	 * @param pathMode Whether to use path mode, i.e., whether slashes must be matched explicitly.
+	 *
+	 * @return true if str matches the pattern, false otherwise.
+	 */
+	bool matchString(const char *pat, bool ignoreCase = false, bool pathMode = false) const;
+	bool matchString(const String &pat, bool ignoreCase = false, bool pathMode = false) const;
+
+//	bool hasSuffix(const char *x) const;
+//	bool hasPrefix(const char *x) const;
 
 	const char *c_str() const		{ return _str ? _str : ""; }
 	uint size() const				{ return _len; }

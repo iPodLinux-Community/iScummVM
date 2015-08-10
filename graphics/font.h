@@ -136,7 +136,7 @@ public:
 	static NewFont *loadFromCache(Common::SeekableReadStream &stream);
 };
 
-#if (defined(PALMOS_ARM) || defined(PALMOS_DEBUG) || defined(__GP32__))
+#if (defined(PALMOS_ARM) || defined(PALMOS_DEBUG) || defined(__GP32__) || defined(IPOD))
 #	define DEFINE_FONT(n) \
 		const NewFont *n;	\
 		void create_##n() {	\

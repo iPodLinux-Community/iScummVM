@@ -95,6 +95,12 @@ void RandomSource::setSeed(uint32 seed) {
 	_randSeed = seed;
 }
 
+uint RandomSource::getRandomBit() {
+	_randSeed = 0xDEADBF03 * (_randSeed + 1);
+	_randSeed = (_randSeed >> 13) | (_randSeed << 19);
+	return _randSeed & 1;
+}
+
 uint RandomSource::getRandomNumber(uint max) {
 	_randSeed = 0xDEADBF03 * (_randSeed + 1);
 	_randSeed = (_randSeed >> 13) | (_randSeed << 19);
