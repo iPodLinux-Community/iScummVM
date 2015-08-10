@@ -217,6 +217,10 @@ void registerDefaults() {
 	ConfMan.registerDefault("joystick_num", -1);
 	ConfMan.registerDefault("confirm_exit", false);
 	ConfMan.registerDefault("disable_sdl_parachute", false);
+	
+	//iPod audio
+	ConfMan.registerDefault("no_audio_quality", false);
+	
 #ifdef USE_ALSA
 	ConfMan.registerDefault("alsa_port", "65:0");
 #endif
@@ -456,6 +460,9 @@ Common::String parseCommandLine(Common::StringMap &settings, int argc, char **ar
 			DO_LONG_OPTION_BOOL("disable-sdl-parachute")
 			END_OPTION
 
+			DO_LONG_OPTION_INT("no_audio_quality")
+			END_OPTION	
+				
 			DO_LONG_OPTION_BOOL("multi-midi")
 			END_OPTION
 

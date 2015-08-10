@@ -663,7 +663,14 @@ bool OSystem_IPOD::remapKey(SDL_Event &ev,Event &event) {
 			event.kbd.ascii = mapKey(SDLK_6, ev.key.keysym.mod, 0);
 			return EVENT_COMPLETED;
 		}
-        }
+		if (ev.type == SDL_KEYUP)
+                {
+			event.type = EVENT_KEYUP;
+			event.kbd.keycode = SDLK_6;
+			event.kbd.ascii = mapKey(SDLK_6, ev.key.keysym.mod, 0);
+			return EVENT_COMPLETED;
+		}
+	}
 	
 	if ((ev.key.keysym.sym == SDLK_r)) {
 			return IGNORE_KEYPRESS;
@@ -675,10 +682,20 @@ bool OSystem_IPOD::remapKey(SDL_Event &ev,Event &event) {
 	
 	if (ev.key.keysym.sym == SDLK_h) {
 
-		event.type = EVENT_KEYDOWN;
-		event.kbd.keycode = SDLK_ESCAPE;
-		event.kbd.ascii = mapKey(SDLK_ESCAPE, ev.key.keysym.mod, 0);
-                return EVENT_COMPLETED;
+		if (ev.type == SDL_KEYDOWN)
+                {
+			event.type = EVENT_KEYDOWN;
+			event.kbd.keycode = SDLK_ESCAPE;
+			event.kbd.ascii = mapKey(SDLK_ESCAPE, ev.key.keysym.mod, 0);
+			return EVENT_COMPLETED;
+		}
+		if (ev.type == SDL_KEYUP)
+                {
+			event.type = EVENT_KEYUP;
+			event.kbd.keycode = SDLK_ESCAPE;
+			event.kbd.ascii = mapKey(SDLK_ESCAPE, ev.key.keysym.mod, 0);
+			return EVENT_COMPLETED;
+		}
         }
 	
 	

@@ -35,6 +35,7 @@
 */
 static const OSystem::GraphicsMode s_supportedGraphicsModes[] = {
 	{"1x", "Normal (no scaling)", GFX_NORMAL},
+	{"0.5x", "Half Size", GFX_HALF},
 	{"2x", "2x", GFX_DOUBLESIZE},
 	{"3x", "3x", GFX_TRIPLESIZE},
 	{"2xsai", "2xSAI", GFX_2XSAI},
@@ -50,6 +51,28 @@ static const OSystem::GraphicsMode s_supportedGraphicsModes[] = {
 	{"dotmatrix", "DotMatrix", GFX_DOTMATRIX},
 	{0, 0, 0}
 };
+
+
+// Scaler function which scales by 0.5
+void Scaleo5x(const uint8 *srcPtr, uint32 srcPitch, uint8 *dstPtr, uint32 dstPitch, int width, int height) {
+      dstPitch >>= 1; srcPitch >>= 1;
+      const int tgtHeight = height >> 1;
+      const int tgtWidth = width >> 1;
+      uint16 dstColor;
+      for(int i=0;i<tgtHeight; i++) {
+              uint16 *srcRow = (uint16*)srcPtr + (i << 1)*srcPitch;
+              uint16 *srcRow2 = (uint16*)srcPtr + ((i << 1)+1)*srcPitch;
+              uint16 *dstRow = (uint16*)dstPtr + i*dstPitch;
+              for(int j=0;j<tgtWidth; j++) {
+                      int srcx = j << 1;
+                      dstColor = (*(srcRow + srcx) & 0xE79C) >> 2;
+                      dstColor += (*(srcRow + srcx+1) & 0xE79C) >> 2;
+                      dstColor += (*(srcRow2 + srcx) & 0xE79C) >> 2;
+                      dstColor += (*(srcRow + srcx+1) & 0xE79C) >> 2;
+                      *(dstRow + j) = dstColor;
+              }
+	  }
+}
 
 // Table of relative scalers magnitudes
 // [definedScale - 1][_scaleFactor - 1]
@@ -150,60 +173,65 @@ void OSystem_IPOD::endGFXTransaction(void) {
 bool OSystem_IPOD::setGraphicsMode(int mode) {
 	Common::StackLock lock(_graphicsMutex);
 
-	int newScaleFactor = 1;
+	//int newScaleFactor = 1;
+	double newScaleFactor = 1.0;
 	ScalerProc *newScalerProc;
 
 	switch(mode) {
 	case GFX_NORMAL:
-		newScaleFactor = 1;
+		newScaleFactor = 1.0;
 		newScalerProc = Normal1x;
+		break;
+	case GFX_HALF:
+		newScaleFactor = 0.5;
+		newScalerProc = Scaleo5x;
 		break;
 #ifndef DISABLE_SCALERS
 	case GFX_DOUBLESIZE:
-		newScaleFactor = 2;
+		newScaleFactor = 2.0;
 		newScalerProc = Normal2x;
 		break;
 	case GFX_TRIPLESIZE:
-		newScaleFactor = 3;
+		newScaleFactor = 3.0;
 		newScalerProc = Normal3x;
 		break;
 
 	case GFX_2XSAI:
-		newScaleFactor = 2;
+		newScaleFactor = 2.0;
 		newScalerProc = _2xSaI;
 		break;
 	case GFX_SUPER2XSAI:
-		newScaleFactor = 2;
+		newScaleFactor = 2.0;
 		newScalerProc = Super2xSaI;
 		break;
 	case GFX_SUPEREAGLE:
-		newScaleFactor = 2;
+		newScaleFactor = 2.0;
 		newScalerProc = SuperEagle;
 		break;
 	case GFX_ADVMAME2X:
-		newScaleFactor = 2;
+		newScaleFactor = 2.0;
 		newScalerProc = AdvMame2x;
 		break;
 	case GFX_ADVMAME3X:
-		newScaleFactor = 3;
+		newScaleFactor = 3.0;
 		newScalerProc = AdvMame3x;
 		break;
 #ifndef DISABLE_HQ_SCALERS
 	case GFX_HQ2X:
-		newScaleFactor = 2;
+		newScaleFactor = 2.0;
 		newScalerProc = HQ2x;
 		break;
 	case GFX_HQ3X:
-		newScaleFactor = 3;
+		newScaleFactor = 3.0;
 		newScalerProc = HQ3x;
 		break;
 #endif
 	case GFX_TV2X:
-		newScaleFactor = 2;
+		newScaleFactor = 2.0;
 		newScalerProc = TV2x;
 		break;
 	case GFX_DOTMATRIX:
-		newScaleFactor = 2;
+		newScaleFactor = 2.0;
 		newScalerProc = DotMatrix;
 		break;
 #endif // DISABLE_SCALERS
@@ -344,10 +372,33 @@ void OSystem_IPOD::loadGFXMode() {
 	//
 	// Create the surface that contains the scaled graphics in 16 bit mode
 	//
-
+/*
 	_hwscreen = SDL_SetVideoMode(hwW, hwH, 16,
 		_fullscreen ? (SDL_FULLSCREEN|SDL_SWSURFACE) : SDL_SWSURFACE
 	);
+*/
+	
+	//
+	// Create the surface that contains the scaled graphics in 16 bit mode
+	// For iPods, you don't get a choice on your size, so just take the only thing SDL_ListModes gives you.
+	//
+
+	SDL_Rect **rs = SDL_ListModes(0, SDL_SWSURFACE);
+	if(rs == (SDL_Rect**)-1) {
+	      _hwscreen = SDL_SetVideoMode(hwW, hwH, 16,
+		      _videoMode.fullscreen ? (SDL_FULLSCREEN|SDL_SWSURFACE) : SDL_SWSURFACE
+	      );
+	} else {
+	      _hwscreen = SDL_SetVideoMode((*rs)->w, (*rs)->h, 16,
+		      _videoMode.fullscreen ? (SDL_FULLSCREEN|SDL_SWSURFACE) : SDL_SWSURFACE
+	      );
+	      _hwScreenOffsetX = ((*rs)->w - hwW) >> 1;
+	      _hwScreenOffsetY = ((*rs)->h - hwH) >> 1;
+	      
+	      SDL_Rect clippingRect = {_hwScreenOffsetX, _hwScreenOffsetY, hwW, hwH};
+	      SDL_SetClipRect(_hwscreen, &clippingRect);
+	}
+
 	if (_hwscreen == NULL) {
 		// DON'T use error(), as this tries to bring up the debug
 		// console, which WON'T WORK now that _hwscreen is hosed.
@@ -510,7 +561,6 @@ void OSystem_IPOD::hotswapGFXMode() {
 }
 
 int framS = 0; 
-int Fskip = 5; // frameskip defined by commandline  --frameskip=
 
 void OSystem_IPOD::internUpdateScreen() {
 #ifdef USE_COP
@@ -522,7 +572,7 @@ void OSystem_IPOD::internUpdateScreen() {
 	#else
 	
 		#ifdef FSKIP
-			if(framS > Fskip)
+			if(framS > FRAMES_SKIPPED)
 			{
 				internUpdateScreen_Real();
 				framS=0;
@@ -535,23 +585,16 @@ void OSystem_IPOD::internUpdateScreen() {
 			internUpdateScreen_Real();
 		#endif
 	#endif
+
 #endif
 }
 
 void OSystem_IPOD::updateScreen() {
 	assert (_transactionMode == kTransactionNone);
+	Common::StackLock lock(_graphicsMutex);	// Lock the mutex until this function ends
 
-//	if(framS > 10)
-//	{
-		Common::StackLock lock(_graphicsMutex);	// Lock the mutex until this function ends
+	internUpdateScreen();	
 
-		internUpdateScreen();	
-//		framS=0;
-//	}
-//	else
-//	{
-//		framS++;
-//	}
 }
 
 
@@ -559,7 +602,8 @@ void OSystem_IPOD::internUpdateScreen_Real() {
 	SDL_Surface *srcSurf, *origSurf;
 	int height, width;
 	ScalerProc *scalerProc;
-	int scale1;
+	//int scale1;
+	double scale1;
 
 #if defined (DEBUG) && ! defined(_WIN32_WCE) // definitions not available for non-DEBUG here. (needed this to compile in SYMBIAN32 & linux?)
 	assert(_hwscreen != NULL);
@@ -657,6 +701,23 @@ void OSystem_IPOD::internUpdateScreen_Real() {
 			}
 		} else {
 			for (r = _dirtyRectList; r != lastRect; ++r) {
+				if(scalerProc == Scaleo5x) {
+					// To scale by half, we should make sure x,y are even aligned
+					if(r->x & 0x1) {
+						r->x -= 1;
+						r->w += 1;
+					}
+					if(r->y & 0x1) {
+						r->y -= 1;
+						r->h += 1;
+					}
+					if(r->w & 0x1) {
+						r->w += 1;
+					}
+					if(r->h & 0x1) {
+						r->h += 1;
+					}
+				}
 				dst = *r;
 				dst.x++;	// Shift rect by one since 2xSai needs to acces the data around
 				dst.y++;	// any pixel to scale it, and we want to avoid mem access crashes.
@@ -1456,11 +1517,12 @@ void OSystem_IPOD::blitCursor() {
   	}
 
 	int rH1 = rH; // store original to pass to aspect-correction function later
+/*
 	if (_adjustAspectRatio && _cursorTargetScale == 1) {
 		rH = real2Aspect(rH - 1) + 1;
 		_mouseCurState.rHotY = real2Aspect(_mouseCurState.rHotY);
 	}
-
+*/
 	if (_mouseCurState.rW != rW || _mouseCurState.rH != rH) {
 		_mouseCurState.rW = rW;
 		_mouseCurState.rH = rH;
@@ -1490,19 +1552,24 @@ void OSystem_IPOD::blitCursor() {
 	// If possible, use the same scaler for the cursor as for the rest of
 	// the game. This only works well with the non-blurring scalers so we
 	// actually only use the 1x, 1.5x, 2x and AdvMame scalers.
-
+	/*
 	if (_cursorTargetScale == 1 && (_mode == GFX_DOUBLESIZE || _mode == GFX_TRIPLESIZE))
 		scalerProc = _scalerProc;
 	else
 		scalerProc = scalersMagn[_cursorTargetScale - 1][_scaleFactor - 1];
+	*/
 
+	scalerProc = _scalerProc;
+	
 	scalerProc((byte *)_mouseOrigSurface->pixels + _mouseOrigSurface->pitch + 2,
 		_mouseOrigSurface->pitch, (byte *)_mouseSurface->pixels, _mouseSurface->pitch,
 		_mouseCurState.w, _mouseCurState.h);
 
 #ifndef DISABLE_SCALERS
+/*
 	if (_adjustAspectRatio && _cursorTargetScale == 1)
 		cursorStretch200To240((uint8 *)_mouseSurface->pixels, _mouseSurface->pitch, rW, rH1, 0, 0, 0);
+*/
 #endif
 
 	SDL_UnlockSurface(_mouseSurface);
@@ -1559,7 +1626,8 @@ void OSystem_IPOD::drawMouse() {
 	}
 
 	SDL_Rect dst;
-	int scale;
+	//int scale;
+	double scale;
 	int width, height;
 	int hotX, hotY;
 

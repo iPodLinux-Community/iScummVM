@@ -32,13 +32,6 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-//#include <sys/ipc.h>
-//#include <sys/shm.h>
-
-//#include <X11/Xlib.h>
-//#include <X11/Xutil.h>
-//#include <X11/extensions/XShm.h>
-
 #include <sys/soundcard.h>
 
 #include <sched.h>
@@ -48,16 +41,16 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
-//#include <backends/x11/x11.h>
-
 
 #include "icons/scummvm.xpm"
 #define DEFAULT_CONFIG_FILE ".scummvmrc"
 
-
 bool AudioInit = true;
 
-
+int ipod_model = 0;
+bool audio_quality = true;
+	
+	
 #if !defined(_WIN32_WCE) && !defined(__MAEMO__)
 
 int main(int argc, char *argv[]) {
@@ -86,8 +79,8 @@ void OSystem_IPOD::initBackend() {
 	//int joystick_num =0;
 	uint32 sdlFlags = SDL_INIT_VIDEO /* | SDL_INIT_AUDIO */ | SDL_INIT_TIMER;
 
-	//if (ConfMan.hasKey("disable_sdl_parachute"))
-	sdlFlags |= SDL_INIT_NOPARACHUTE;
+	if (ConfMan.hasKey("disable_sdl_parachute"))
+		sdlFlags |= SDL_INIT_NOPARACHUTE;
 
 
 	if (SDL_Init(sdlFlags) == -1) {
@@ -99,12 +92,12 @@ void OSystem_IPOD::initBackend() {
 	else
 		_rotation_modulation = 180;
 	
-	/*
-	if (ConfMan.hasKey("frameskip"))
-		_frameskip = ConfMan.getInt("frameskip");
-	else
-		_frameskip = 0;
-	*/
+	#ifdef AUDIO_QUALITY
+		audio_quality = true;
+	#else
+		audio_quality = false;
+	#endif
+	
 	_graphicsMutex = createMutex();
 
 	SDL_ShowCursor(SDL_DISABLE);
@@ -115,55 +108,37 @@ void OSystem_IPOD::initBackend() {
 	_cksumValid = false;
 	
 	setFeatureState(OSystem::kFeatureAutoComputeDirtyRects, true);
-/*
-#if !defined(_WIN32_WCE) && !defined(__SYMBIAN32__) && !defined(DISABLE_SCALERS)
-	_mode = GFX_DOUBLESIZE;
-	_scaleFactor = 2;
-	_scalerProc = Normal2x;
-	_fullscreen = ConfMan.getBool("fullscreen");
-	_adjustAspectRatio = ConfMan.getBool("aspect_ratio");
-#else // for small screen platforms
-	_mode = GFX_NORMAL;
-	_scaleFactor = 1;
-	_scalerProc = Normal1x;
-*/
-	/*
+
 	SDL_Rect **rs = SDL_ListModes(0, SDL_SWSURFACE);
 	if(rs == (SDL_Rect **)-1) {
-	*/
+
+		ipod_model = 0; // unknown
 		_mode = GFX_NORMAL;
 		_scaleFactor = 1;
 		_scalerProc = Normal1x;
-	/*
+
 	} else {
 	       if((*rs)->w < 320 || (*rs)->h < 240) {
-			_mode = GFX_HALF;
+			ipod_model = 1; // nano or photo
+		       _mode = GFX_HALF;
 			_scaleFactor = 0.5;
 			_scalerProc = Scaleo5x;
 	       } else {
+		       ipod_model = 0; // 5G's
 			_mode = GFX_NORMAL;
 			_scaleFactor = 1.0;
 			_scalerProc = Normal1x;
 	       }
 	}
-	*/
+	
 	_modeFlags = 0;
-
 	_fullscreen = true;
 
-
 	_adjustAspectRatio = false;
-//#endif
+
 	_scalerType = 0;
 	_modeFlags = 0;
 
-/*
-	// enable joystick
-	if (joystick_num > -1 && SDL_NumJoysticks() > 0) {
-		printf("Using joystick: %s\n", SDL_JoystickName(0));
-		_joystick = SDL_JoystickOpen(joystick_num);
-	}
-*/
 	_inited = true;
 }
 
@@ -183,8 +158,10 @@ OSystem_IPOD::OSystem_IPOD()
 	_joystick(0),
 	_currentShakePos(0), _newShakePos(0),
 	_paletteDirtyStart(0), _paletteDirtyEnd(0),
+	//ipod_model(0), audio_quality(true), // iPod audio
 	_graphicsMutex(0), _transactionMode(kTransactionNone) {
 
+	
 	_frameskip = 0;
 	// allocate palette storage
 	_currentPalette = (SDL_Color *)calloc(sizeof(SDL_Color), 256);
@@ -354,12 +331,8 @@ void OSystem_IPOD::deleteMutex(MutexRef mutex) {
 
 #undef CAPTURE_SOUND
 
-#ifdef AUDIO_QUALITY
-	#define FRAG_SIZE 512
-#else
-	#define FRAG_SIZE 1024
-#endif
-		
+#define FRAG_SIZE 512
+	
 int sound_fd, ipod_mixer, paramz, frag_size;
 
 uint8 sound_buffer[FRAG_SIZE];
@@ -374,51 +347,36 @@ static void *sound_and_music_thread(void *params) {
 
 	if(AudioInit)
 	{
-		
 		sound_fd = open("/dev/dsp", O_WRONLY);
 		
 		if (sound_fd < 0) {
 			warning("Error opening sound device!\n");
 			return NULL;
 		}
-		/*
-		int sound_frag = 0x7fff0008;
-	      if (ioctl(sound_fd, SNDCTL_DSP_SETFRAGMENT, &sound_frag) != 0) {
-		 warning("Error in the SNDCTL_DSP_SETFRAGMENT ioctl!\n");
-		 return NULL;
-	      }
-		*/
+	
 		paramz = AFMT_S16_NE;
-		//paramz = AFMT_S8;
 		if (ioctl(sound_fd, SNDCTL_DSP_SETFMT, &paramz) == -1) {
 			warning("Error in the SNDCTL_DSP_SETFMT ioctl!\n");
 			return NULL;;
 		}
-		/*
-		if (paramz != AFMT_S16_NE) {
-			warning("AFMT_S16_LE not supported!\n");
-			return NULL;
-		}
-		*/
-		#ifdef AUDIO_QUALITY
+		
+		if ( (audio_quality) )
+		{
 			paramz = 1;
 			if (ioctl(sound_fd, SNDCTL_DSP_CHANNELS, &paramz) == -1) {
 				warning("Error in the SNDCTL_DSP_CHANNELS ioctl!\n");
 				return NULL;
 			}
-		#else
+		}
+		else
+		{
 			paramz = 2;
 			if (ioctl(sound_fd, SNDCTL_DSP_CHANNELS, &paramz) == -1) {
 				warning("Error in the SNDCTL_DSP_CHANNELS ioctl!\n");
 				return NULL;
 			}
-		#endif
-		/*
-		if (param != 2) {
-			warning("Stereo mode not supported!\n");
-			return NULL;
 		}
-		*/
+
 		paramz = SAMPLES_PER_SEC;
 		if (ioctl(sound_fd, SNDCTL_DSP_SPEED, &paramz) == -1) {
 			warning("Error in the SNDCTL_DSP_SPEED ioctl!\n");
@@ -428,61 +386,18 @@ static void *sound_and_music_thread(void *params) {
 			warning("%d kHz not supported!\n", SAMPLES_PER_SEC);
 			return NULL;
 		}
-		/*
-		int sound_frag = 0x00220022;
-	      if (ioctl(sound_fd, SNDCTL_DSP_SETFRAGMENT, &sound_frag) != 0) {
-		 warning("Error in the SNDCTL_DSP_SETFRAGMENT ioctl!\n");
-		 return NULL;
-	      }
-	   */
-	
-	/*
-		paramz = 0;
-		frag_size = FRAG_SIZE ;
-		while (frag_size) {
-			frag_size >>= 1;
-			paramz++;
-		}
-		paramz--;
- 
-		paramz |= 5 << 16;
-	*/
-	/*
-		uint32 sample_size = 0x8000;
-
-		for (;;) {
-			if ((1000 * sample_size) / SAMPLES_PER_SEC < 100)
-				break;
-			sample_size >>= 1;
-		}
-		
-		if (ioctl(sound_fd, SNDCTL_DSP_SETFRAGMENT, &sample_size) != 0) {
-			warning("Error in the SNDCTL_DSP_SETFRAGMENT ioctl!\n");
-			return NULL;
-		}
-	
-	*/
 		ipod_mixer = open("/dev/mixer", O_RDWR);
 		if (ipod_mixer  < 0) {
 			warning("Error opening MIXER device!\n");
 			return NULL;
 		}
 	
-		
-		//ioctl(sound_fd, SNDCTL_DSP_NONBLOCK, NULL);		
 		int ipod_volume = 50;
 		ioctl(ipod_mixer, SOUND_MIXER_WRITE_PCM, &ipod_volume);
-	/*
-		if (ioctl(sound_fd, SNDCTL_DSP_GETOSPACE, &info) != 0) {
-			warning("SNDCTL_DSP_GETOSPACE");
-			return NULL;
-		}
-	*/
+		
 		AudioInit = false;
 	}
 
-	
-	
 	sched_yield();
 	while (1) {
 		uint8 *buf = (uint8 *)sound_buffer;
@@ -506,29 +421,20 @@ static void *sound_and_music_thread(void *params) {
 #pragma mark -
 
 bool OSystem_IPOD::setSoundCallback(SoundProc proc, void *param) {
-
-
 	
 	static THREAD_PARAM thread_param;
-
-	_samplesPerSec = 0;
 
 	if (ConfMan.hasKey("output_rate"))
 		_samplesPerSec = ConfMan.getInt("output_rate");
 
-	#ifdef AUDIO_QUALITY
-		if (_samplesPerSec <= 0)
-			_samplesPerSec = 8000;
-	#else
-		if (_samplesPerSec <= 0)
-			_samplesPerSec = SAMPLES_PER_SEC;
-	#endif
-	
-		//_samplesPerSec = ;
-	
-
-	
-
+	if ( (audio_quality)  && (ipod_model!= 1) )
+	{
+		_samplesPerSec = 8000;
+	}
+	else
+	{
+		_samplesPerSec = SAMPLES_PER_SEC;
+	}
 	
 	/* And finally start the music thread */
 	thread_param.param = param;
@@ -540,7 +446,6 @@ bool OSystem_IPOD::setSoundCallback(SoundProc proc, void *param) {
 }
 
 void OSystem_IPOD::clearSoundCallback() {
-	//SDL_CloseAudio();
 	close(sound_fd);
 	close(ipod_mixer);
 }
@@ -554,21 +459,7 @@ int OSystem_IPOD::getOutputSampleRate() const {
 #pragma mark -
 
 bool OSystem_IPOD::openCD(int drive) {
-	/*
-	if (SDL_InitSubSystem(SDL_INIT_CDROM) == -1)
-		_cdrom = NULL;
-	else {
-		_cdrom = SDL_CDOpen(drive);
-		// Did it open? Check if _cdrom is NULL
-		if (!_cdrom) {
-			warning("Couldn't open drive: %s", SDL_GetError());
-		} else {
-			_cdNumLoops = 0;
-			_cdStopTime = 0;
-			_cdEndTime = 0;
-		}
-	}
-	*/
+
 	return (_cdrom != NULL);
 }
 
@@ -578,29 +469,6 @@ void OSystem_IPOD::stopCD() {	/* Stop CD Audio in 1/10th of a second */
 }
 
 void OSystem_IPOD::playCD(int track, int num_loops, int start_frame, int duration) {
-	/*
-	if (!num_loops && !start_frame)
-		return;
-
-	if (!_cdrom)
-		return;
-
-	if (duration > 0)
-		duration += 5;
-
-	_cdTrack = track;
-	_cdNumLoops = num_loops;
-	_cdStartFrame = start_frame;
-
-	SDL_CDStatus(_cdrom);
-	if (start_frame == 0 && duration == 0)
-		SDL_CDPlayTracks(_cdrom, track, 0, 1, 0);
-	else
-		SDL_CDPlayTracks(_cdrom, track, start_frame, 0, duration);
-	_cdDuration = duration;
-	_cdStopTime = 0;
-	_cdEndTime = SDL_GetTicks() + _cdrom->track[track].length * 1000 / CD_FPS;
-	*/
 }
 
 bool OSystem_IPOD::pollCD() {
@@ -614,32 +482,4 @@ void OSystem_IPOD::updateCD() {
 	
 	if (!_cdrom)
 		return;
-	/*
-	if (_cdStopTime != 0 && SDL_GetTicks() >= _cdStopTime) {
-		SDL_CDStop(_cdrom);
-		_cdNumLoops = 0;
-		_cdStopTime = 0;
-		return;
-	}
-
-	if (_cdNumLoops == 0 || SDL_GetTicks() < _cdEndTime)
-		return;
-
-	if (_cdNumLoops != 1 && SDL_CDStatus(_cdrom) != CD_STOPPED) {
-		// Wait another second for it to be done
-		_cdEndTime += 1000;
-		return;
-	}
-
-	if (_cdNumLoops > 0)
-		_cdNumLoops--;
-
-	if (_cdNumLoops != 0) {
-		if (_cdStartFrame == 0 && _cdDuration == 0)
-			SDL_CDPlayTracks(_cdrom, _cdTrack, 0, 1, 0);
-		else
-			SDL_CDPlayTracks(_cdrom, _cdTrack, _cdStartFrame, 0, _cdDuration);
-		_cdEndTime = SDL_GetTicks() + _cdrom->track[_cdTrack].length * 1000 / CD_FPS;
-	}
-	*/
 }

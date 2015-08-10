@@ -36,7 +36,7 @@
 #define AUDIO_QUALITY 1 // good audio quality with much latency
 
 //#define FSKIP 1 //skips 5 frames - look ar graphics.cpp for internUpdateScreen()
-
+//#define FRAMES_SKIPPED 10
 //#define USE_COP 1
 
 // Uncomment this to enable the 'on screen display' code.
@@ -52,17 +52,18 @@ enum remapKeyResult { NO_REMAP, EVENT_COMPLETED, IGNORE_KEYPRESS };
 
 enum {
 	GFX_NORMAL = 0,
-	GFX_DOUBLESIZE = 1,
-	GFX_TRIPLESIZE = 2,
-	GFX_2XSAI = 3,
-	GFX_SUPER2XSAI = 4,
-	GFX_SUPEREAGLE = 5,
-	GFX_ADVMAME2X = 6,
-	GFX_ADVMAME3X = 7,
-	GFX_HQ2X = 8,
-	GFX_HQ3X = 9,
-	GFX_TV2X = 10,
-	GFX_DOTMATRIX = 11
+	GFX_HALF = 1,
+	GFX_DOUBLESIZE = 2,
+	GFX_TRIPLESIZE = 3,
+	GFX_2XSAI = 4,
+	GFX_SUPER2XSAI = 5,
+	GFX_SUPEREAGLE = 6,
+	GFX_ADVMAME2X = 7,
+	GFX_ADVMAME3X = 8,
+	GFX_HQ2X = 9,
+	GFX_HQ3X = 10,
+	GFX_TV2X = 11,
+	GFX_DOTMATRIX = 12
 };
 
 
@@ -202,6 +203,10 @@ public:
 	void internUpdateScreen_Real();
 	
 	int _rotation_modulation;
+	
+	//int _ipod_model;
+	//bool _audio_quality;
+	
 	int _hwScreenOffsetX;
 	int _hwScreenOffsetY;
 	
@@ -301,7 +306,8 @@ protected:
 	bool _forceFull;
 	ScalerProc *_scalerProc;
 	int _scalerType;
-	int _scaleFactor;
+	//int _scaleFactor;
+	double _scaleFactor;
 	int _mode;
 	int _transactionMode;
 	bool _fullscreen;
@@ -433,6 +439,8 @@ protected:
 
 	void handleScalerHotkeys(const SDL_KeyboardEvent &key);
 };
+
+void Scaleo5x(const uint8 *srcPtr, uint32 srcPitch, uint8 *dstPtr, uint32 dstPitch, int width, int height);
 
 #ifdef USE_COP
 	void ipod_init_cop(OSystem_IPOD *ipod_g_system);
